@@ -4,7 +4,13 @@ RGB_MATRIX_EFFECT(my_cool_effect_without_kitt)
 
 #ifdef RGB_MATRIX_CUSTOM_EFFECT_IMPLS
 
-#include "host.h" // Needed for host_keyboard_led_state()
+#include "host.h"
+#include "timer.h"
+#include "rgb_matrix.h"
+#include "keyboard.h"
+
+// Track breathing animation state
+static uint8_t caps_breathe_phase = 0;
 
 // KITT-enabled effect
 static bool my_cool_effect_with_kitt(effect_params_t* params) {
@@ -12,12 +18,26 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
 
     static uint16_t last_tick = 0;
     static uint8_t anim_index = 0;
+    static bool resumed = false;
 
     static const uint8_t kitt_leds_left[]  = {105, 106, 107, 108, 109, 110, 111, 112, 113};
     static const uint8_t kitt_leds_right[] = {123, 122, 121, 120, 119, 118, 117, 116, 115};
     static const uint8_t kitt_sequence[]   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1};
     const uint8_t kitt_length = sizeof(kitt_sequence) / sizeof(kitt_sequence[0]);
 
+    // Handle suspend state: if the keyboard is suspended, skip animations but still process key events.
+    if (rgb_matrix_get_suspend_state()) {
+        return false;  // Skip drawing entirely while suspended but allow keypresses.
+    }
+
+    // On resume from suspend, reset the animation
+    if (resumed) {
+        last_tick = timer_read();
+        anim_index = 0;
+        resumed = false;
+    }
+
+    // Advance the animation
     if (timer_elapsed(last_tick) > 75) {
         last_tick = timer_read();
         anim_index = (anim_index + 1) % kitt_length;
@@ -34,7 +54,13 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
     rgb_matrix_set_color(kitt_leds_left[pos], 255, 0, 0);
     rgb_matrix_set_color(kitt_leds_right[pos], 255, 0, 0);
 
-    // Color the rest
+    // Caps lock breathing effect
+    if (host_keyboard_led_state().caps_lock) {
+        caps_breathe_phase = (caps_breathe_phase + 2) % 255;
+    }
+    uint8_t caps_brightness = sin8(caps_breathe_phase);
+
+    // Background colors
     for (uint8_t i = led_min; i < led_max; i++) {
         if ((i >= 105 && i <= 113) || (i >= 115 && i <= 123)) continue; // Skip KITT LEDs
 
@@ -42,15 +68,15 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
             rgb_matrix_set_color(i, 0, 255, 0); // Green
         } else if (i == 58) {
             if (host_keyboard_led_state().caps_lock) {
-                rgb_matrix_set_color(i, 255, 0, 0); // Red (Caps Lock ON)
+                rgb_matrix_set_color(i, caps_brightness, 0, 0); // Breathing Red
             } else {
-                rgb_matrix_set_color(i, 0, 0, 255);   // Blue (Caps Lock OFF)
+                rgb_matrix_set_color(i, 0, 0, 255); // Static Blue
             }
         } else if (i == 33) { // NumLock indicator
             if (host_keyboard_led_state().num_lock) {
-                rgb_matrix_set_color(i, 255, 0, 0); // Red (Num Lock ON)
+                rgb_matrix_set_color(i, 255, 0, 0); // Red
             } else {
-                rgb_matrix_set_color(i, 0, 0, 255); // Blue (Num Lock OFF)
+                rgb_matrix_set_color(i, 0, 0, 255); // Blue
             }
         } else if (i == 125) {
             rgb_matrix_set_color(i, 255, 0, 0); // Red
@@ -68,6 +94,21 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
 static bool my_cool_effect_without_kitt(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
 
+    static uint8_t caps_breathe_phase = 0;
+
+    // Handle suspend state: if the keyboard is suspended, skip animations but still process key events.
+    if (rgb_matrix_get_suspend_state()) {
+        return false;  // Skip drawing entirely while suspended but allow keypresses.
+    }
+
+    // Caps lock breathing effect
+    if (host_keyboard_led_state().caps_lock) {
+        caps_breathe_phase = (caps_breathe_phase + 2) % 255;
+    }
+
+    uint8_t caps_brightness = sin8(caps_breathe_phase);
+
+    // Update LED colors
     for (uint8_t i = led_min; i < led_max; i++) {
         if ((i >= 105 && i <= 113) || (i >= 115 && i <= 123)) continue; // Skip KITT LEDs
 
@@ -75,15 +116,15 @@ static bool my_cool_effect_without_kitt(effect_params_t* params) {
             rgb_matrix_set_color(i, 0, 255, 0); // Green
         } else if (i == 58) {
             if (host_keyboard_led_state().caps_lock) {
-                rgb_matrix_set_color(i, 255, 0, 0); // Red (Caps Lock ON)
+                rgb_matrix_set_color(i, caps_brightness, 0, 0); // Breathing Red
             } else {
-                rgb_matrix_set_color(i, 0, 0, 255);   // Blue (Caps Lock OFF)
+                rgb_matrix_set_color(i, 0, 0, 255); // Static Blue
             }
-        } else if (i == 33) { // NumLock indicator
+        } else if (i == 33) {
             if (host_keyboard_led_state().num_lock) {
-                rgb_matrix_set_color(i, 255, 0, 0); // Red (Num Lock ON)
+                rgb_matrix_set_color(i, 255, 0, 0); // Red
             } else {
-                rgb_matrix_set_color(i, 0, 0, 255); // Blue (Num Lock OFF)
+                rgb_matrix_set_color(i, 0, 0, 255); // Blue
             }
         } else if (i == 125) {
             rgb_matrix_set_color(i, 255, 0, 0); // Red
