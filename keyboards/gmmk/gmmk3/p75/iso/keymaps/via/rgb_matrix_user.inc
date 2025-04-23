@@ -20,9 +20,9 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
     static uint8_t anim_index = 0;
     static bool resumed = false;
 
-    static const uint8_t kitt_leds_left[]  = {81, 82, 83, 84, 85, 86, 87, 88, 89};
-    static const uint8_t kitt_leds_right[] = {99, 98, 97, 96, 95, 94, 93, 92, 91};
-    static const uint8_t kitt_sequence[]   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1};
+    static const uint8_t kitt_leds_left[]  = {81, 82, 83, 84, 85, 86, 87, 88, 89, 90};
+    static const uint8_t kitt_leds_right[] = {100, 99, 98, 97, 96, 95, 94, 93, 92, 91};
+    static const uint8_t kitt_sequence[]   = {0, 1, 2, 3, 4, 5, 6, 7, 8 ,9, 8, 7, 6, 5, 4, 3, 2, 1};
     const uint8_t kitt_length = sizeof(kitt_sequence) / sizeof(kitt_sequence[0]);
 
     // Handle suspend state: if the keyboard is suspended, skip animations but still process key events.
@@ -44,7 +44,7 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
     }
 
     // Clear KITT LEDs
-    for (uint8_t i = 0; i < 9; i++) {
+    for (uint8_t i = 0; i < 10; i++) {
         rgb_matrix_set_color(kitt_leds_left[i], 0, 0, 0);
         rgb_matrix_set_color(kitt_leds_right[i], 0, 0, 0);
     }
@@ -62,7 +62,7 @@ static bool my_cool_effect_with_kitt(effect_params_t* params) {
 
     // Background colors
     for (uint8_t i = led_min; i < led_max; i++) {
-        if ((i >= 81 && i <= 89) || (i >= 91 && i <= 99)) continue; // Skip KITT LEDs
+        if ((i >= 81 && i <= 90) || (i >= 91 && i <= 100)) continue; // Skip KITT LEDs
 
         if (i >= 1 && i <= 12) {
             rgb_matrix_set_color(i, 0, 255, 0); // Green
@@ -104,7 +104,7 @@ static bool my_cool_effect_without_kitt(effect_params_t* params) {
 
     // Update LED colors
     for (uint8_t i = led_min; i < led_max; i++) {
-        if ((i >= 81 && i <= 89) || (i >= 91 && i <= 99)) continue; // Skip KITT LEDs
+        if ((i >= 81 && i <= 90) || (i >= 91 && i <= 100)) continue; // Skip KITT LEDs
 
         if (i >= 1 && i <= 12) {
             rgb_matrix_set_color(i, 0, 255, 0); // Green
